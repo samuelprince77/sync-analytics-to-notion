@@ -1,0 +1,21 @@
+[versions]
+
+kotlinVersion = "1.8.0"
+kotlinSerializationJsonVersion = "1.5.0"
+ktorVersion = "2.2.4"
+
+[libraries]
+
+kotlinCompilerEmbedable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlinVersion" }
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinVersion" }
+kotlinSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerializationJsonVersion" }
+ktor-client = { module = "io.ktor:ktor-client-core", version.ref = "ktorVersion" }
+ktor-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorVersion" }
+ktor-engine = { module = "io.ktor:ktor-client-cio", version.ref = "ktorVersion" }
+ktor-logging = { module = "io.ktor:ktor-client-logging-jvm", version.ref = "ktorVersion" }
+ktor-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorVersion" }
+junit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
+
+[bundles]
+
+ktor = ["ktor-client", "ktor-contentNegotiation", "ktor-engine", "ktor-logging", "ktor-serialization"]
