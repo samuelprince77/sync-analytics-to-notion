@@ -97,8 +97,11 @@ class TestAttributionsPlugin(
         }
 
         appBuildGradleFile = testProjectDir.newFile("app/build.gradle.kts")
-        gradleRunner = GradleRunner.create().withProjectDir(testProjectDir.root).withArguments("--stacktrace")
-        gradleRunner.withGradleVersion(gradleVersion)
+        gradleRunner = GradleRunner
+            .create()
+            .withProjectDir(testProjectDir.root)
+            .withArguments("--stacktrace")
+            .withGradleVersion(gradleVersion)
     }
 
     @Test
@@ -110,9 +113,15 @@ class TestAttributionsPlugin(
                     id("sync-analytics-to-notion")
                 }
                 
+                android {
+                    namespace = "com.test.namespace"
+                }
+                
                 syncAnalyticsToNotion {
                    setNotionAuthKey("tests")
                    setNotionDatabaseId("test1")
+                   setNotionEventNameColumnName("TestColumn1")
+                   setNotionParametersColumnName("TestColumn2")
                 }
             """.trimIndent()
         )
@@ -123,9 +132,10 @@ class TestAttributionsPlugin(
     companion object {
         @Parameterized.Parameters(name = "AGP version: {0}, Gradle version: {1}")
         @JvmStatic
-        fun agpAndGradleVersions(): Collection<Array<String>> = setOf(
-            listOf("7.3.0", "7.4.2"),
-        ).map { it.toTypedArray() }
+        fun agpAndGradleVersions(): Collection<Array<String>> = listOf(
+            arrayOf("7.3.0", "7.4.2"),
+            arrayOf("8.1.4", "8.4")
+        )
     }
 
 }

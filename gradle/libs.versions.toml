@@ -1,6 +1,6 @@
 [versions]
 
-kotlinVersion = "1.8.0"
+kotlinVersion = "1.9.20"
 kotlinSerializationJsonVersion = "1.5.0"
 ktorVersion = "2.2.4"
 
