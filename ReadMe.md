@@ -99,11 +99,11 @@ fun exampleWithNoParameters() {
 
 Based off this example, the plugin will produce the following result in notion:
 
-| YOUR_EVENT_NAME_COLUMN_NAME | YOUR_EVENT_PARAMETERS_COLUMN NAME                                                                       |
-|-----------------------------|---------------------------------------------------------------------------------------------------------|
-| your_event_name             | - example_reference<br/> - example_string<br/> - example_int<br/> - example_double<br/> - example_long  |
-| your_other_event_name       | another_param_name                                                                                      |
-| your_no_params_event_name   | your_no_params_event_name                                                                               |
+| YOUR_EVENT_NAME_COLUMN_NAME | YOUR_EVENT_PARAMETERS_COLUMN NAME                                                                      |
+|-----------------------------|--------------------------------------------------------------------------------------------------------|
+| your_event_name             | - example_reference<br/> - example_string<br/> - example_int<br/> - example_double<br/> - example_long |
+| your_other_event_name       | another_param_name                                                                                     |
+| your_no_params_event_name   |                                                                                                        |
 
 This plugin will also take care of removing (archiving) any events from notion that were not found in the code making
 sure your code is the single source of truth.
