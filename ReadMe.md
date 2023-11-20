@@ -108,6 +108,7 @@ Based off this example, the plugin will produce the following result in notion:
 This plugin will also take care of removing (archiving) any events from notion that were not found in the code making
 sure your code is the single source of truth.
 
+### Custom parsing
 In case this setup is too strict for your liking, you can pass your own parser that should be an implementation of 
 `AnalyticsEventInfoParser`. This interface provides you with all the kotlin files contained in your module's main source
 set.
