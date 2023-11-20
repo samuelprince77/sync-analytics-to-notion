@@ -1,11 +1,11 @@
 # Sync analytics to notion 
-This is a gradle plugin that registers tasks that allow you to seamlessly sync all your in app analytics events to a 
+This is a gradle plugin that registers a task that allows you to seamlessly sync all your analytics events to a 
 database in notion where these events can be viewed in a human friendly way. 
 
-This plugin aims to be both easy to use and flexible so it provides a default kotlin code parser while also giving you 
-the ability to pass your own parser.
+This plugin aims to be both easy to use and flexible so it provides a default android kotlin code parser while also 
+giving you the ability to pass your own kotlin code parser.
 
-To be able to use this plugin, you first need to create a notion [integration](#https://www.notion.so/integrations) and 
+To be able to use this plugin, you first need to create a notion [integration](https://www.notion.so/integrations) and 
 add it to the notion database that you would like to save the events to.
 
 ## Usage
@@ -32,13 +32,14 @@ syncAnalyticsToNotion {
 ```
 
 A task will be created called `syncAnalyticsToNotion` that you can invoke directly like this:
+
 `./gradlew syncAnalyticsToNotion`
 
-By default, this plugin provides you with a kotlin code parser that will look for the analytics events but it expects a
-strict format as follows:
+By default, this plugin provides you with an android kotlin code parser that will look for the analytics events but it 
+expects a strict format as follows:
 - A function must exist that logs your analytics events and parameters. This function must be annotated with 
 `@AnalyticsEventLogger` that comes bundled with this plugin. This function must have two parameters, the first one 
-being a string which represents the event name and the second one being a [Bundle](#https://developer.android.com/reference/android/os/Bundle)
+being a string which represents the event name and the second one being a [Bundle](https://developer.android.com/reference/android/os/Bundle)
 
 Example in your `.kt` file:
 ```kotlin
