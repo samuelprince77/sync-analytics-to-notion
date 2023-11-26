@@ -34,10 +34,6 @@ plugins {
     id("sync-analytics-to-notion")
 }
 
-dependencies {
-    implementation("io.github.samuelprince77:sync-analytics-to-notion:1.0.0")
-}
-
 syncAnalyticsToNotion { 
     setNotionAuthKey("YOUR_NOTION_AUTH_KEY")
     // this is the database where the events found will be posted to
