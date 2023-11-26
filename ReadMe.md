@@ -15,10 +15,27 @@ Apply the plugin to your module and provide the following:
 - `notion event name column name`
 - `notion event parameters column name`
 
-Example in your `build.gradle.kts` file:
+In your root `build.gradle.kts` file:
+```kotlin
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("io.github.samuelprince77:sync-analytics-to-notion:1.0.0")
+    }
+}
+```
+
+In your module's `build.gradle.kts` file:
 ```kotlin
 plugins {
     id("sync-analytics-to-notion")
+}
+
+dependencies {
+    implementation("io.github.samuelprince77:sync-analytics-to-notion:1.0.0")
 }
 
 syncAnalyticsToNotion { 
