@@ -6,10 +6,11 @@ plugins {
     `java-library`
     `java-gradle-plugin`
     `maven-publish`
+    signing
     kotlin("plugin.serialization") version libs.versions.kotlinVersion.get()
 }
 
-group = "se.samuel"
+group = "io.github.samuelprince77"
 version = "1.0.0"
 
 repositories {
@@ -57,13 +58,60 @@ gradlePlugin {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "se.samuel"
-            artifactId = "sync-analytics-to-notion"
-            version = "1.0.0"
+    repositories.maven {
+        name = "mavenCentral"
+        setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
 
-            from(components["java"])
+        credentials.apply {
+            username = providers.gradleProperty("sonatype.username").get()
+            password = providers.gradleProperty("sonatype.password").get()
         }
     }
+
+    repositories.maven {
+        name = "sonatypeSnapshots"
+        setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        with(credentials) {
+            username = providers.gradleProperty("sonatype.username").get()
+            password = providers.gradleProperty("sonatype.password").get()
+        }
+    }
+
+    publications {
+        create<MavenPublication>("analyticsPlugin") {
+            groupId = "io.github.samuelprince77"
+            artifactId = "sync-analytics-to-notion"
+            version = "1.0.0"
+            from(components["java"])
+
+            pom {
+                name.set("Sync analytics to notion")
+                description.set("A kotlin gradle plugin that parses your analytics and syncs event names and parameter to notion")
+                url.set("https://github.com/samuelprince77/sync-analytics-to-notion")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://github.com/samuelprince77/sync-analytics-to-notion/blob/main/Licence.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("samuelprince77")
+                        name.set("Samuel Prince")
+                        email.set("samuel.prince77@gmail.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git://example.com/my-library.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/samuelprince77/sync-analytics-to-notion.git")
+                    url.set("https://github.com/samuelprince77/sync-analytics-to-notion")
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications["analyticsPlugin"])
 }
