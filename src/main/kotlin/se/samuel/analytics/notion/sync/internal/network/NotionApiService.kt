@@ -1,25 +1,13 @@
 package se.samuel.analytics.notion.sync.internal.network
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.request.header
-import io.ktor.client.request.patch
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.gradle.api.logging.Logger
 import se.samuel.analytics.notion.sync.data.AnalyticsEventInfo
 import se.samuel.analytics.notion.sync.internal.network.data.FetchPagePropertyResponse
@@ -37,10 +25,13 @@ import se.samuel.analytics.notion.sync.internal.network.data.RemotePropertiesBod
 import se.samuel.analytics.notion.sync.internal.network.data.RichTextAnnotations
 import se.samuel.analytics.notion.sync.internal.network.data.RichTextContent
 import se.samuel.analytics.notion.sync.internal.network.data.RichTextData
+import java.time.Duration
 
 private const val AUTHORIZATION_HEADER = "Authorization"
 private const val NOTION_VERSION_HEADER = "Notion-Version"
 private const val NOTION_VERSION_VALUE = "2022-06-28"
+
+private val okhttpTimeoutDuration = Duration.ofMinutes(3)
 
 internal class NotionApiService(
     private val logger: Logger,
@@ -50,24 +41,24 @@ internal class NotionApiService(
     private val notionParametersColumnName: String,
 ) {
 
-    private val httpClient: HttpClient = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(JsonFormat)
-        }
-
-        install(Logging) {
-            logger = object : io.ktor.client.plugins.logging.Logger {
-                override fun log(message: String) {
-                    this@NotionApiService.logger.debug("httpClient {}", message)
-                }
+    private val httpClient = OkHttpClient
+        .Builder()
+        .addInterceptor { chain ->
+            with(chain) {
+                proceed(
+                    request()
+                        .newBuilder()
+                        .addHeader(AUTHORIZATION_HEADER, notionAuthKey)
+                        .addHeader(NOTION_VERSION_HEADER, NOTION_VERSION_VALUE)
+                        .build()
+                )
             }
-            level = LogLevel.ALL
         }
-
-        engine {
-            requestTimeout = 30_000
-        }
-    }
+        .callTimeout(okhttpTimeoutDuration)
+        .readTimeout(okhttpTimeoutDuration)
+        .writeTimeout(okhttpTimeoutDuration)
+        .connectTimeout(okhttpTimeoutDuration)
+        .build()
 
     internal fun uploadAnalyticsEvents(
         analyticsEventInfo: List<AnalyticsEventInfo>,
@@ -152,20 +143,20 @@ internal class NotionApiService(
         startCursor: String? = null,
     ): List<FetchPageResponse> {
         val url = String.format("https://api.notion.com/v1/databases/%s/query", notionDatabaseId)
-        val request = httpClient.post(url) {
-            contentType(ContentType.Application.Json)
-            header(AUTHORIZATION_HEADER, notionAuthKey)
-            header(NOTION_VERSION_HEADER, NOTION_VERSION_VALUE)
 
-            setBody(
-                RemoteFetchAllDatabaseValuesRequestBody(startCursor = startCursor,)
-            )
-        }
+        val request: Request = Request
+            .Builder()
+            .url(url)
+            .post(RemoteFetchAllDatabaseValuesRequestBody(startCursor = startCursor).toApplicationJsonRequestBody())
+            .build()
+
+        val response = httpClient.newCall(request).awaitResponse()
 
         val foundRemotePages = remotePagesFound.toMutableList()
 
-        if (request.status.isSuccess()) {
-            val parsedResponse = request.body<RemoteFetchPagesResponse>()
+        val body = response.body?.string()
+        if (response.isSuccessful && body != null) {
+            val parsedResponse = JsonFormat.decodeFromString<RemoteFetchPagesResponse>(body)
 
             foundRemotePages += parsedResponse.results.map {
                 FetchPageResponse(
@@ -190,7 +181,7 @@ internal class NotionApiService(
                 foundRemotePages
             }
         } else {
-            throw IllegalStateException("Failed to fetch properties from notion, response is: ${request.bodyAsText()}")
+            throw IllegalStateException("Failed to fetch properties from notion, response is: $body")
         }
     }
 
@@ -198,24 +189,24 @@ internal class NotionApiService(
         event: AnalyticsEventInfo,
     ) {
         val url = "https://api.notion.com/v1/pages"
-        val request = httpClient.post(url) {
-            contentType(ContentType.Application.Json)
-            header(AUTHORIZATION_HEADER, notionAuthKey)
-            header(NOTION_VERSION_HEADER, NOTION_VERSION_VALUE)
-
-            setBody(
+        val request: Request = Request
+            .Builder()
+            .url(url)
+            .post(
                 RemoteInsertPageRequest(
                     parent = RemoteParent(databaseId = notionDatabaseId),
                     properties = event.toRemotePropertiesBody(
                         eventColumnName = notionEventNameColumnName,
                         parametersColumnName = notionParametersColumnName
                     )
-                )
+                ).toApplicationJsonRequestBody()
             )
-        }
+            .build()
 
-        if (!request.status.isSuccess()) {
-            throw IllegalStateException("Failed to insert event $event because ${request.bodyAsText()}")
+        val response = httpClient.newCall(request).awaitResponse()
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException("Failed to insert event $event because ${response.body?.string()}")
         }
     }
 
@@ -224,25 +215,24 @@ internal class NotionApiService(
         pageId: String,
     ) {
         val url = String.format("https://api.notion.com/v1/pages/%s", pageId)
-        val request = httpClient.patch(url) {
-            contentType(ContentType.Application.Json)
-            header(AUTHORIZATION_HEADER, notionAuthKey)
-            header(NOTION_VERSION_HEADER, NOTION_VERSION_VALUE)
-
-            setBody(
+        val request: Request = Request
+            .Builder()
+            .url(url)
+            .patch(
                 RemotePatchPageRequest(
                     properties = event.toRemotePropertiesBody(
                         eventColumnName = notionEventNameColumnName,
                         parametersColumnName = notionParametersColumnName
                     )
-                )
+                ).toApplicationJsonRequestBody()
             )
-        }
+            .build()
 
-        if (!request.status.isSuccess()) {
-            throw IllegalStateException("Unable to update event: $event because ${request.bodyAsText()}")
-        }
+        val response = httpClient.newCall(request).awaitResponse()
 
+        if (!response.isSuccessful) {
+            throw IllegalStateException("Unable to update event: $event because ${response.body?.string()}")
+        }
     }
 
     private suspend fun archiveEvent(
@@ -250,22 +240,22 @@ internal class NotionApiService(
         pageId: String,
     ) {
         val url = String.format("https://api.notion.com/v1/pages/%s", pageId)
-        val request = httpClient.patch(url) {
-            contentType(ContentType.Application.Json)
-            header(AUTHORIZATION_HEADER, notionAuthKey)
-            header(NOTION_VERSION_HEADER, NOTION_VERSION_VALUE)
+        val request: Request = Request
+            .Builder()
+            .url(url)
+            .patch(RemoteArchiveEventRequest(archived = true).toApplicationJsonRequestBody())
+            .build()
 
-            setBody(RemoteArchiveEventRequest(archived = true))
-        }
+        val response = httpClient.newCall(request).awaitResponse()
 
-        if (!request.status.isSuccess()) {
-            throw IllegalStateException("Unable to archive event $eventName because ${request.bodyAsText()}")
+        if (!response.isSuccessful) {
+            throw IllegalStateException("Unable to archive event $eventName because ${response.body?.string()}")
         }
     }
 
 }
 
-internal fun AnalyticsEventInfo.toRemotePropertiesBody(
+private fun AnalyticsEventInfo.toRemotePropertiesBody(
     eventColumnName: String,
     parametersColumnName: String,
 ): RemotePropertiesBody =

@@ -10,8 +10,11 @@ plugins {
     kotlin("plugin.serialization") version libs.versions.kotlinVersion.get()
 }
 
-group = "io.github.samuelprince77"
-version = "1.0.0"
+val groupName = "io.github.samuelprince77"
+val versionName = "1.0.2"
+
+group = groupName
+version = versionName
 
 repositories {
     mavenCentral()
@@ -29,10 +32,11 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+    implementation(libs.coroutines)
     implementation(libs.kotlinGradlePlugin)
     implementation(libs.kotlinSerializationJson)
-
-    implementation(libs.bundles.ktor)
+    implementation(platform(libs.okhttpBom))
+    implementation(libs.okhttp)
 
     val compilerClasspath by configurations.creating {
         isCanBeConsumed = false
@@ -77,9 +81,9 @@ publishing {
 
     publications {
         create<MavenPublication>("analyticsPlugin") {
-            groupId = "io.github.samuelprince77"
+            groupId = groupName
             artifactId = "sync-analytics-to-notion"
-            version = "1.0.0"
+            version = versionName
             from(components["java"])
 
             pom {

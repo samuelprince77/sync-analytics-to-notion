@@ -16,23 +16,21 @@ open class SyncAnalyticsToNotionPlugin : Plugin<Project> {
             SyncAnalyticsToNotionExtension::class.java
         )
 
-        target.afterEvaluate {
-            when {
-                rootExtension.notionAuthKey.orNull == null -> "Notion authentication key is missing"
-                rootExtension.notionDatabaseId.orNull == null -> "Notion databaseId is missing"
-                rootExtension.notionEventNameColumnName.orNull == null -> "Notion event name column name is missing"
-                rootExtension.notionParametersColumnName.orNull == null -> "Notion parameters column name is missing"
-                else -> null
-            }?.let { errorMessage ->
-                target.logger.error(errorMessage)
-                throw GradleException(errorMessage)
-            }
-        }
-
         target
             .tasks
             .register("syncAnalyticsToNotion", SyncAnalyticsToNotionTask::class.java)
             .configure {
+                when {
+                    rootExtension.notionAuthKey.orNull == null -> "Notion authentication key is missing"
+                    rootExtension.notionDatabaseId.orNull == null -> "Notion databaseId is missing"
+                    rootExtension.notionEventNameColumnName.orNull == null -> "Notion event name column name is missing"
+                    rootExtension.notionParametersColumnName.orNull == null -> "Notion parameters column name is missing"
+                    else -> null
+                }?.let { errorMessage ->
+                    target.logger.error(errorMessage)
+                    throw GradleException(errorMessage)
+                }
+
                 with(it) {
                     analyticsEventInfoParser.set(rootExtension.analyticsEventInfoParser)
                     notionAuthKey.set(rootExtension.notionAuthKey)
