@@ -11,7 +11,7 @@ plugins {
 }
 
 val groupName = "io.github.samuelprince77"
-val versionName = "1.0.2"
+val versionName = "1.0.3"
 
 group = groupName
 version = versionName
