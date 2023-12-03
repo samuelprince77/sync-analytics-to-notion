@@ -23,7 +23,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("io.github.samuelprince77:sync-analytics-to-notion:1.0.0")
+        classpath("io.github.samuelprince77:sync-analytics-to-notion:1.0.3")
     }
 }
 ```
